@@ -1,9 +1,8 @@
 
-import pygame, pixelperfect
+import pygame
 import sys
 import math
 import copy
-from pixelperfect import *
 from random import randint
 from pygame.locals import *
 from settingsL import *
@@ -14,6 +13,7 @@ from math import pi
 SCREEN_WIDTH = 780
 SCREEN_HEIGHT = 900
 FRAME_RATE = 30
+# soy dos gilipollas
 
 WALL_COLOR = {'P':(255, 255, 255), 'Q': (0, 200, 93), 'q': (179, 255, 215), 'D': (200, 0, 200), 'G': (255, 255, 255), 'F': (255, 255, 255), 'f': (255, 255, 255), 'Y': (199, 248, 255), 'M': (238, 56, 24), 'm': (20, 20, 228), 'I': (255,255,255), 'i': (255,255,255), '*': (255,255,255)}
 
