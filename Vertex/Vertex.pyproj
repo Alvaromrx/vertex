@@ -27,7 +27,6 @@
     <Compile Include="settingsL.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="pixelperfect.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="enemies\" />

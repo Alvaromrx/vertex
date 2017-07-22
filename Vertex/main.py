@@ -17,14 +17,14 @@ FRAME_RATE = 30
 
 WALL_COLOR = {'P':(255, 255, 255), 'Q': (0, 200, 93), 'q': (179, 255, 215), 'D': (200, 0, 200), 'G': (255, 255, 255), 'F': (255, 255, 255), 'f': (255, 255, 255), 'Y': (199, 248, 255), 'M': (238, 56, 24), 'm': (20, 20, 228), 'I': (255,255,255), 'i': (255,255,255), '*': (255,255,255)}
 
-PLAYER_LEFT_TOP = pygame.image.load("images/player1_l.png")
-PLAYER_LEFT_BOT = pygame.image.load("images/player1B_l.png")
-PLAYER_RIGHT_TOP = pygame.image.load("images/player1_r.png")
-PLAYER_RIGHT_BOT = pygame.image.load("images/player1B_r.png")
-PLAYER_INV_LEFT_TOP = pygame.image.load("images/player1_l_inv.png")
+PLAYER_LEFT_TOP = pygame.image.load("images/player/playerLT.png")
+PLAYER_LEFT_BOT = pygame.image.load("images/player/playerLB.png")
+PLAYER_RIGHT_TOP = pygame.image.load("images/player/playerRT.png")
+PLAYER_RIGHT_BOT = pygame.image.load("images/player/playerRB.png")
+'''PLAYER_INV_LEFT_TOP = pygame.image.load("images/player1_l_inv.png")
 PLAYER_INV_LEFT_BOT = pygame.image.load("images/player1B_l_inv.png")
 PLAYER_INV_RIGHT_TOP = pygame.image.load("images/player1_r_inv.png")
-PLAYER_INV_RIGHT_BOT = pygame.image.load("images/player1B_r_inv.png")
+PLAYER_INV_RIGHT_BOT = pygame.image.load("images/player1B_r_inv.png")'''
 PLAYER_POSITION_Y = 500
 PLAYER_JUMP = 20
 
@@ -88,7 +88,7 @@ class Game():
         labelNextlevel = font.render("NEXT LEVEL", 5, (255,255,255))
         timeGameOver = 100
         heart = pygame.image.load("images/heart.png")
-        fog = pygame.image.load("images/fog.png")
+        #fog = pygame.image.load("images/fog.png")
         #playerS = copy.copy(player)
         #playerS.alive = False
         cFireCannon = 0
@@ -378,13 +378,13 @@ class Game():
                         player.dimension = False
                         if not block.hit:
                             if block.type == '<':
-                                block.image = pygame.image.load("images/spikeB_l.png")
+                                block.image = pygame.image.load("images/spikes/spikeRH.png")
                             elif block.type == '>':
-                                block.image = pygame.image.load("images/spikeB_r.png")
+                                block.image = pygame.image.load("images/spikes/spikeLH.png")
                             elif block.type == '^':
-                                block.image = pygame.image.load("images/spikeB_t.png")
+                                block.image = pygame.image.load("images/spikes/spikeTH.png")
                             elif block.type == 'v':
-                                block.image = pygame.image.load("images/spikeB_b.png")
+                                block.image = pygame.image.load("images/spikes/spikeBH.png")
 
                             block.hit = True                        
                         if not player.invincible:
@@ -417,9 +417,9 @@ class Game():
                         player.alive = False
                         player.blackhole = True
                         if player.dir == 0:
-                            player.image = pygame.image.load("images/player_l_blackhole.png")
+                            player.image = pygame.image.load("images/player/playerL_blackhole.png")
                         elif player.dir == 1:
-                            player.image = pygame.image.load("images/player_r_blackhole.png")
+                            player.image = pygame.image.load("images/player/playerR_blackhole.png")
                         player.rect = player.image.get_rect()
                         player.rect.left = b.rect.left
                         player.rect.top = b.rect.top
@@ -444,9 +444,9 @@ class Game():
 
                 for c in coins:
                     if(pygame.sprite.collide_rect(player, c)):
-                        if c.type == 'o':
+                        if c.type == 'o' and player.dir == 0:
                             player.coins += 1
-                        elif c.type == 'O':
+                        elif c.type == 'O' and player.dir == 1:
                             player.coins += 5
                         elif c.type == '0':
                             player.coins += 10
@@ -541,7 +541,7 @@ class Game():
                     for e in i:
                         e.draw(screen)
                 
-                screen.blit(fog, (0, 0))
+                #screen.blit(fog, (0, 0))
 
                 for i in range(player.lives):
                     screen.blit(heart, ((i+1)*33, 20))
@@ -638,7 +638,7 @@ class createPlayer(pygame.sprite.Sprite):
         self.x = x
         self.y = y     
         #self.images = ["images/player1_l.png", "images/player1_r.png"] # (608, 60) - (60, 38)
-        self.image = pygame.image.load("images/player1_l.png")
+        self.image = pygame.image.load("images/player/playerLT.png")
         self.imageFrame = ''
         self.rect = self.image.get_rect()
         self.rect.left = x
@@ -1245,17 +1245,17 @@ class Enemy(pygame.sprite.Sprite):
     def setFrames(self):
         gp = self.property['group']
         if gp == 'enemy01':
-            self.rect.width = 30
+            self.rect.width = 14
             self.rect.height = 30
-            self.frames.update({'idleframes': [0, 7]})
-            self.frames.update({'hitframes': [8, 8]})
-            self.frames.update({'deadframes': [8, 8]})            
-        elif gp == 'enemy02':
-            self.rect.width = 33
-            self.rect.height = 40
             self.frames.update({'idleframes': [0, 1]})
-            self.frames.update({'hitframes': [2, 3]})
-            self.frames.update({'deadframes': [2, 3]})
+            self.frames.update({'hitframes': [2, 2]})
+            self.frames.update({'deadframes': [2, 2]})            
+        elif gp == 'enemy02':
+            self.rect.width = 17
+            self.rect.height = 38
+            self.frames.update({'idleframes': [0, 1]})
+            self.frames.update({'hitframes': [0, 1]})
+            self.frames.update({'deadframes': [0, 1]})
 
         self.frame = 'idleframes'
         self.cImage = self.frames[self.frame][0]
@@ -1279,13 +1279,13 @@ class Spike(pygame.sprite.Sprite):
 
     def getImage(self):
         if self.type == "<":
-            self.image = pygame.image.load("images/spike_l.png")
+            self.image = pygame.image.load("images/spikes/spikeL.png")
         elif self.type == ">":
-            self.image = pygame.image.load("images/spike_r.png")
+            self.image = pygame.image.load("images/spikes/spikeR.png")
         elif self.type == "^":
-            self.image = pygame.image.load("images/spike_t.png")
+            self.image = pygame.image.load("images/spikes/spikeT.png")
         elif self.type == "v":
-            self.image = pygame.image.load("images/spike_b.png")
+            self.image = pygame.image.load("images/spikes/spikeB.png")
         self.rect = self.image.get_rect()
         self.rect.top = self.y
         self.rect.left = self.x
@@ -1316,9 +1316,9 @@ class Cannon(pygame.sprite.Sprite):
     def setProperty(self):
         img = ''
         if self.property['color'] == 'blue':
-            img = 'images/cannon_l.png'
+            img = 'images/cannonL.png'
         elif self.property['color'] == 'red':
-            img = 'images/cannon_r.png'
+            img = 'images/cannonR.png'
         self.image = pygame.image.load(img)
         self.rect = self.image.get_rect()
         self.rect.top = self.y
@@ -1400,11 +1400,11 @@ class Coin(pygame.sprite.Sprite):
 
     def getImage(self):
         if self.type == "o":
-            self.image = pygame.image.load("images/coin_copper.png")
+            self.image = pygame.image.load("images/coinL.png")
         elif self.type == "O":
-            self.image = pygame.image.load("images/coin_silver.png")
+            self.image = pygame.image.load("images/coinR.png")
         elif self.type == "0":
-            self.image = pygame.image.load("images/coin_gold.png")
+            self.image = pygame.image.load("images/coinG.png")
 
         self.rect = self.image.get_rect()
         self.rect.top = self.y
@@ -1481,9 +1481,9 @@ class Portal(pygame.sprite.Sprite):
 
     def getImage(self):
         if self.type == "H":
-            self.image = pygame.image.load("images/portal_door_r.png")
+            self.image = pygame.image.load("images/portalR.png")
         elif self.type == "h":
-            self.image = pygame.image.load("images/portal_door_l.png")
+            self.image = pygame.image.load("images/portalL.png")
         self.rect = self.image.get_rect()
         self.rect.top = self.y
         self.rect.left = self.x
@@ -1517,13 +1517,13 @@ class Laser(pygame.sprite.Sprite):
             self.coord = self.property['coord'][0]
         img = ''
         if self.property['color'] == 'yellow':
-            img = 'images/laser_yellow.png'
+            img = 'images/laser/laser_yellow.png'
         elif self.property['color'] == 'red':
-            img = 'images/laser_red.png'
+            img = 'images/laser/laser_red.png'
         elif self.property['color'] == 'blue':
-            img = 'images/laser_blue.png'
+            img = 'images/laser/laser_blue.png'
         elif self.property['color'] == 'green':
-            img = 'images/laser_green.png'
+            img = 'images/laser/laser_green.png'
         self.image = pygame.image.load(img)
         self.rect = self.image.get_rect()
         self.rect.top = self.y
@@ -1585,13 +1585,13 @@ class Switch(pygame.sprite.Sprite):
     def setProperty(self):
         img = ''
         if self.property['color'] == 'yellow':
-            img = 'images/switch_yellow.png'
+            img = 'images/switch/switch_yellow.png'
         elif self.property['color'] == 'red':
-            img = 'images/switch_red.png'
+            img = 'images/switch/switch_red.png'
         elif self.property['color'] == 'blue':
-            img = 'images/switch_blue.png'
+            img = 'images/switch/switch_blue.png'
         elif self.property['color'] == 'green':
-            img = 'images/switch_green.png'
+            img = 'images/switch/switch_green.png'
         self.image = pygame.image.load(img)
         self.rect = self.image.get_rect()
         self.rect.top = self.y
@@ -1636,7 +1636,7 @@ class Switch(pygame.sprite.Sprite):
 
 
 
-class Marker (pygame.sprite.Sprite):
+class Marker(pygame.sprite.Sprite):
     def __init__(self, x, y, type):
         pygame.sprite.Sprite.__init__(self)
         self.id = id
@@ -1782,7 +1782,7 @@ def fillMap(prop, player, r, diff):
                     player.dir = 0
                 elif col == 'k':
                     player.dir = 1
-                    player.image = pygame.image.load("images/player1_r.png")
+                    player.image = pygame.image.load("images/player/playerRT.png")
                 if numRow <= 3:
                     player.orientation = 1
                 else:
