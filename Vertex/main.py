@@ -15,7 +15,7 @@ SCREEN_HEIGHT = 900
 FRAME_RATE = 30
 # soy dos gilipollas
 
-WALL_COLOR = {'P':(255, 255, 255), 'Q': (0, 200, 93), 'q': (179, 255, 215), 'D': (200, 0, 200), 'G': (255, 255, 255), 'F': (255, 255, 255), 'f': (255, 255, 255), 'Y': (199, 248, 255), 'M': (238, 56, 24), 'm': (20, 20, 228), 'I': (255,255,255), 'i': (255,255,255), '*': (255,255,255)}
+WALL_COLOR = {'P':(255, 255, 255), 'Q': (0, 200, 93), 'q': (179, 255, 215), 'D': (200, 0, 200), 'd': (238,206,0), 'G': (255, 255, 255), 'F': (255, 255, 255), 'f': (255, 255, 255), 'Y': (199, 248, 255), 'M': (238, 56, 24), 'm': (20, 20, 228), 'I': (255,255,255), 'i': (255,255,255), '*': (255,255,255)}
 
 PLAYER_LEFT_TOP = pygame.image.load("images/player/playerLT.png")
 PLAYER_LEFT_BOT = pygame.image.load("images/player/playerLB.png")
@@ -79,6 +79,7 @@ class Game():
         # main loop variables
         clock = pygame.time.Clock()
         ORIENTATION = 0
+        stopCamera = False
         # initialize font; must be called after 'pygame.init()' to avoid 'Font not Initialized' error
         clipMask(player)
         myfont = pygame.font.SysFont("monospace", 15)
@@ -131,40 +132,39 @@ class Game():
 
                     if event.key == K_SPACE:
                         space_key_pressed = True
-                        if not player.hitLaser:
-                            for c in cannons:
-                                if c == player.idCannon and not c.disable:
-                                    cFireCannon = 0
-                                    player.cannon = True
-                                    player.idCannon = 0
-                                    if c.property['dir'] == 'top':
-                                        changeDimension(player, False, True, 0)
-                                        player.rect.center = c.rect.center
-                                        player.rect.top -= 40
-                                        ORIENTATION = 0
-                                        if c.property['disable']:
-                                            c.image = pygame.image.load("images/cannonTD.png")
-                                            c.disable = True
-                                    elif c.property['dir'] == 'bot':
-                                        changeDimension(player, False, True, 1)
-                                        player.rect.center = c.rect.center
-                                        player.rect.top += 40
-                                        ORIENTATION = 1
-                                        if c.property['disable']:
-                                            c.image = pygame.image.load("images/cannonBD.png")
-                                            c.disable = True
+                        for c in cannons:
+                            if c == player.idCannon and not c.disable:
+                                cFireCannon = 0
+                                player.cannon = True
+                                player.idCannon = 0
+                                if c.property['dir'] == 'top':
+                                    changeDimension(player, False, True, 0)
+                                    player.rect.center = c.rect.center
+                                    player.rect.top -= 40
+                                    ORIENTATION = 0
+                                    if c.property['disable']:
+                                        c.image = pygame.image.load("images/cannonTD.png")
+                                        c.disable = True
+                                elif c.property['dir'] == 'bot':
+                                    changeDimension(player, False, True, 1)
+                                    player.rect.center = c.rect.center
+                                    player.rect.top += 40
+                                    ORIENTATION = 1
+                                    if c.property['disable']:
+                                        c.image = pygame.image.load("images/cannonBD.png")
+                                        c.disable = True
 
-                            if player.jump:
-                                player.djump = True
-                                player.jump = False
+                        if player.jump:
+                            player.djump = True
+                            player.jump = False
+                            player.aniJump = True
+                            player.cJump = player.distJump
+                            player.maxJ = False
+
+                        else:
+                            if not player.dimension:
                                 player.aniJump = True
-                                player.cJump = player.distJump
-                                player.maxJ = False
-
-                            else:
-                                if not player.dimension:
-                                    player.aniJump = True
-                                    player.jump = True                           
+                                player.jump = True                           
 
                 elif event.type == pygame.KEYUP:
                     if event.key == UP_KEY:
@@ -199,7 +199,7 @@ class Game():
             #
             #   U P D A T E
             # --------------------------------------------------------------
-            if player.idCannon == 0 and not player.cannon and not player.hitLaser:
+            if player.idCannon == 0 and not player.cannon and not player.deadTime:
                 if vertical_dir == VERTICAL_UP:
                     player.mov = True            
                     if player.rect.top > 0:
@@ -216,7 +216,7 @@ class Game():
                             #changeDimension(player, False, True, 1)
 
             # change if for elif for 4-coordinates only movement
-            if (not player.jump and not player.djump and player.floor and not player.hitLaser) or player.idCannon != 0:                  
+            if (not player.jump and not player.djump and player.floor and not player.deadTime) or player.idCannon != 0:                  
                 if horizontal_dir == HORIZONTAL_LEFT:              
                     if player.idCannon != 0:
                         player.idCannon.change_speed(-10, 0)
@@ -269,12 +269,13 @@ class Game():
             if player.alive:              
 
                 # MOVEMENT PLAYER
-                if ORIENTATION == 0:
-                    player.rect.top += player.vel
-                    #player.change_speed(0, player.vel)
-                else:
-                    player.rect.top -= player.vel
-                    #player.change_speed(0, -player.vel)
+                if not stopCamera:
+                    if ORIENTATION == 0:
+                        player.rect.top += player.vel
+                        #player.change_speed(0, player.vel)
+                    elif ORIENTATION == 1:
+                        player.rect.top -= player.vel
+                        #player.change_speed(0, -player.vel)
 
                 '''if player.cannon:
                     player.rect.top += player.vel*4
@@ -314,26 +315,20 @@ class Game():
                 # Check eje Y of the Player for gameover
                 if (player.rect.top + player.rect.height >= SCREEN_HEIGHT and ORIENTATION==0):
                     player.change_speed(0, -player.vel)
+                    
                 elif (player.rect.top <= 0 and ORIENTATION==1):
                     player.change_speed(0, player.vel)
-                    #player.lives = 0
 
-                # Reset Player Variables
-                player.dimension = True
-                player.canSide = False
-                player.platform = 0
-                player.floor = False
-                player.glued = False
-                
                 collisionY = False
                 collisionX = False
                 tempRectY = 0
                 tempRectX = 0
                 color = 0
                 limitScreen = False
+                stopCamera = False
 
                 # Check collision between Player and another element (platform, enemies, etc)
-                player.update([platform, ghPlatform, enemies, lasers], space_key_pressed)
+                stopCamera = player.update([platform, ghPlatform, enemies, lasers], space_key_pressed, stopCamera)
 
                 # Player - Make the movement and check the collision with the group passed by parameter
                 for i in listUpdates:
@@ -341,30 +336,25 @@ class Game():
                         u.update(player)
                              
                 #if not changeDim or player.cannon:
-                for i in elements:
-                    for e in i:
-                        velocity = 0.0
-                        fy = e.rect.top
-                        velocity = player.vel                  
+                if not stopCamera:
+                    for i in elements:
+                        for e in i:
+                            velocity = 0.0
+                            fy = e.rect.top
+                            velocity = player.vel                  
                             
-                        if ORIENTATION == 0:
-                            fy += velocity
+                            if ORIENTATION == 0:
+                                fy += velocity
                             
-                        elif ORIENTATION == 1:
-                            fy -= velocity             
+                            elif ORIENTATION == 1:
+                                fy -= velocity             
 
-                        e.rect.top = fy
+                            e.rect.top = fy
                                    
-                #Movement Portal              
-                if ORIENTATION == 0:
-                    if player.cannon:                      
-                        portal.rect.top += player.vel*6
-                    else:
+                    #Movement Portal              
+                    if ORIENTATION == 0:
                         portal.rect.top += player.vel                          
-                elif ORIENTATION == 1:
-                    if player.cannon:                      
-                        portal.rect.top -= player.vel*6
-                    else:
+                    elif ORIENTATION == 1:
                         portal.rect.top -= player.vel                      
                  
                 # Check Collision between 1 Sprite and 1 Group Sprites (player, spikes)
@@ -384,7 +374,7 @@ class Game():
 
                             block.hit = True                        
                         if not player.invincible:
-                            player.hitLaser = True
+                            player.deadTime = True
                             #player.hit = True
                             #player.lives -= 1
                         break
@@ -486,7 +476,7 @@ class Game():
                 for b in blocks_hit_list:
                     if not player.invincible and b.active:
                         #player.alive = False   
-                        player.hitLaser = True'''
+                        player.deadTime = True'''
 
                 for b in switches:
                     if pygame.sprite.collide_rect(player, b):
@@ -504,7 +494,7 @@ class Game():
             screen.fill( (0, 0, 0) ) # black background
 
             # game over
-            if not player.alive and not player.blackhole and not player.hitLaser:
+            if not player.alive and not player.blackhole and not player.deadTime:
                 if portal.hit:
                     gameover(screen, labelNextlevel)
                 else:
@@ -526,7 +516,7 @@ class Game():
                     timeGameOver -= 1
 
             # blit the graphic elements to the screen surface
-            if player.alive or player.blackhole or player.hitLaser:
+            if player.alive or player.blackhole or player.deadTime:
                 player.draw(screen)
                 portal.draw(screen)
 
@@ -604,13 +594,14 @@ class Game():
                 player.cImageBh += 0.5
 
         # SpriteSheet Animation Death Laser
-        if player.hitLaser:
-            if (player.cImageL >= player.numImagesL-1):
+        if player.deadTime:
+            if (player.cImageDead >= player.numImagesDead-1):
                 #player.cImageBh = 0
-                player.hitLaser = False
-                player.alive = False
+                player.deadTime = False
+                
+                
             else:
-                player.cImageL += 0.5
+                player.cImageDead += 0.5
 
         # SpriteSheet Animation Portal       
         if (portal.cImage >= portal.numImages):
@@ -655,9 +646,9 @@ class createPlayer(pygame.sprite.Sprite):
         self.blackhole = False
         self.cImageBh = 0
         self.numImagesBh = 13
-        self.hitLaser = False
-        self.cImageL = 0
-        self.numImagesL = 32 
+        self.deadTime = False
+        self.cImageDead = 0
+        self.numImagesDead = 25
         self.numImages = 16
         self.cImage = 16
         self.currentVel = 16
@@ -677,6 +668,7 @@ class createPlayer(pygame.sprite.Sprite):
         self.djumpcImage = 4
         self.maxJ = False
         self.floor = False
+        self.wall = False
         self.cannon = False
         self.idCannon = 0
         self.canSide = False
@@ -719,8 +711,17 @@ class createPlayer(pygame.sprite.Sprite):
         self.hspeed += hspeed
         self.vspeed += vspeed
 
-    def update(self, collidable, space_key):
+    def resetV(self):
         self.enemy = None
+        self.dimension = True
+        self.canSide = False
+        self.platform = 0
+        self.floor = False
+        self.glued = False
+        self.wall = False
+
+    def update(self, collidable, space_key, stopCamera):
+        self.resetV()
         # Check collision between Player and Marks list
         '''
         self.row = round(self.rect.top/PLATFORM_SIZE)
@@ -745,7 +746,7 @@ class createPlayer(pygame.sprite.Sprite):
                     co.hit = True
                     self.enemy = co
                     if co.property['lives'] <= 0:                       
-                        co.frame = 'deadframes'
+                        co.frame = 'deadTimeframes'
                         co.cImage = co.frames[co.frame][0]
 
                     elif co.property['canDie'] and self.djump and not self.hit:
@@ -794,7 +795,8 @@ class createPlayer(pygame.sprite.Sprite):
 
                     else:
                         if not self.invincible and not self.hit and co.property['damage']:
-                            self.hitLaser = True
+                            self.alive = False
+                            self.deadTime = True                  
                             #self.lives -= 1
                             #self.hit = True
 
@@ -802,32 +804,33 @@ class createPlayer(pygame.sprite.Sprite):
                     if not self.invincible and co.active:
                         #player.alive = False 
                         dif = math.fabs(round(co.rect.centerx - self.rect.centerx))  
-                        if dif < 24:  
-                            self.hitLaser = True
+                        if dif < 24: 
+                            self.alive = False
+                            self.deadTime = True
 
                 # CHECK COLLISION PLATFORMS
                 else:
-                    if co.type in ('D', 'M', 'm'):
+                    if co.type in ('D', 'd', 'M', 'm'):
                         self.platform = co
-                    if co.type in ('P', 'Q', 'q', 'D', 'F', 'i'):
+                    if co.type in ('P', 'Q', 'q', 'D', 'F', 'i', 'd'):
                         if co.alpha > 70:
                             roof = False            
                             dif = math.fabs(co.rect.centery - self.rect.centery)
-                            dist = (co.rect.width+self.rect.width)/2
+                            dist = (co.rect.height+self.rect.height)/2
 
                             if ( self.hspeed > 0 ):
                                 # RIGHT DIRECTION
-                                if dif < dist-5:
-                                    if self.rect.right <= co.rect.left + self.velGravity:
-                                        self.rect.right = co.rect.left
+                                if dif <= dist:
+                                    #if self.rect.right <= co.rect.left + self.velGravity:
+                                    self.rect.right = co.rect.left
                                 if self.dir == 0:
                                     roof = True
 
                             elif ( self.hspeed < 0 ):
                                 # LEFT DIRECTION
-                                if dif < dist-5:
-                                    if self.rect.left >= co.rect.right - self.velGravity:
-                                        self.rect.left = co.rect.right
+                                if dif <= dist:
+                                    #if self.rect.left >= co.rect.right - self.velGravity:
+                                    self.rect.left = co.rect.right
                                 if self.dir == 1:
                                     roof = True
 
@@ -852,6 +855,10 @@ class createPlayer(pygame.sprite.Sprite):
                             elif co.type == 'q':
                                 self.dimension = True
                                 break
+                            elif co.type == 'd':
+                                if dif < dist-10:
+                                    stopCamera = True
+                                    break
 
                     if co.type == 'I':
                         self.canSide = True
@@ -878,7 +885,7 @@ class createPlayer(pygame.sprite.Sprite):
                     co.hit = True
                     self.enemy = co
                     if co.property['lives'] <= 0:
-                        co.frame = 'deadframes'
+                        co.frame = 'deadTimeframes'
                         co.cImage = co.frames[co.frame][0]
 
                     elif co.property['canDie'] and self.djump and not self.hit:
@@ -890,7 +897,8 @@ class createPlayer(pygame.sprite.Sprite):
                         co.property['lives'] -= 1
 
                     elif not self.invincible and not self.hit and co.property['damage']:
-                        self.hitLaser = True
+                        self.alive = False
+                        self.deadTime = True
                         #self.lives -= 1
                         #self.hit = True
 
@@ -908,10 +916,12 @@ class createPlayer(pygame.sprite.Sprite):
                         #player.alive = False
                         dif = math.fabs(round(co.rect.centery - self.rect.centery))  
                         if dif < 14:
-                            self.hitLaser = True         
+                            self.alive = False
+                            self.deadTime = True         
 
                 # CHECK COLLISION PLATFORMS
                 else:
+                    self.wall = True
                     if co.type in ('D', 'M', 'm'):
                         self.platform = co
                     if co.type in ('P', 'i') or (co.type == 'M' and self.dir == 0) or (co.type == 'm' and self.dir == 1):
@@ -925,10 +935,16 @@ class createPlayer(pygame.sprite.Sprite):
                             if ( self.vspeed > 0 ):
                                 # DOWN DIRECTION
                                 self.rect.bottom = co.rect.top
+                                if self.rect.top < 0:
+                                    self.alive = False
+                                    self.deadTime = True
 
                             elif ( self.vspeed < 0 ):
                                 # UP DIRECTION
                                 self.rect.top = co.rect.bottom
+                                if self.rect.top + self.rect.height > SCREEN_HEIGHT:
+                                    self.alive = False
+                                    self.deadTime = True
 
                     if co.type == 'I':
                         self.canSide = True
@@ -936,12 +952,14 @@ class createPlayer(pygame.sprite.Sprite):
         self.hspeed = 0
         self.vspeed = 0
 
+        return stopCamera
+
     def draw(self, surface):
         if self.idCannon == 0:
             if self.blackhole:
                 surface.blit(self.image, self.rect, (math.floor(self.cImageBh)*self.rect.width, 0, self.rect.width, self.rect.height))    
-            elif self.hitLaser:
-                surface.blit(self.image, self.rect, (self.rect.width*3, math.floor(self.cImageL)*self.rect.height, self.rect.width, self.rect.height))    
+            elif self.deadTime:
+                surface.blit(self.image, self.rect, (self.rect.width*3, math.floor(self.cImageDead)*self.rect.height, self.rect.width, self.rect.height))    
             elif self.jump:
                 surface.blit(self.image, self.rect, (self.rect.width, self.rect.height, self.rect.width, self.rect.height))
             elif self.djump or self.cannon:
@@ -1012,27 +1030,29 @@ class Platform(pygame.sprite.Sprite):
 
             elif self.indexCoord == 0:
                 self.rect.top -= self.property['speedY']
-                self.coord -= self.property['speedY'] 
+                self.coord -= math.fabs(self.property['speedY'])
                 if player.glued:
                     player.rect.top -= self.property['speedY']/2
                     
             elif self.indexCoord == 1:
                 self.rect.left += self.property['speedX']
-                self.coord -= self.property['speedX']
+                self.coord -= math.fabs(self.property['speedX'])
                 if player.glued:
                     player.rect.left += self.property['speedX']/2
                     
             elif self.indexCoord == 2:
                 self.rect.top += self.property['speedY']
-                self.coord -= self.property['speedY']
+                self.coord -= math.fabs(self.property['speedY'])
                 if player.glued:
                     player.rect.top += self.property['speedY']/2
 
             elif self.indexCoord == 3:
                 self.rect.left -= self.property['speedX']
-                self.coord -= self.property['speedX']
+                self.coord -= math.fabs(self.property['speedX'])
                 if player.glued:
                     player.rect.left -= self.property['speedX']/2
+
+                
 
     def setProperty(self):
         self.type = self.property['t1']
@@ -1110,8 +1130,8 @@ class Enemy(pygame.sprite.Sprite):
         self.frames = {}
         self.frame = 0
         self.cImage = 0
-        self.timeDead = 20
-        self.cTimeDead = 0
+        self.timedeadTime = 20
+        self.cTimedeadTime = 0
         self.type = type
         self.hit = False
         self.property = None
@@ -1156,11 +1176,11 @@ class Enemy(pygame.sprite.Sprite):
                 if self.property['speedY'] > 0:
                     if self.property['orientation'] == 'up':      
                         vspeed -= self.property['speedY']
-                        if self == player.enemy:
+                        if self == player.enemy and not self.property['damage']:
                             player.change_speed(0, -self.property['speedY'])
                     elif self.property['orientation'] == 'down':                    
                         vspeed += self.property['speedY']
-                        if self == player.enemy:
+                        if self == player.enemy and not self.property['damage']:
                             player.change_speed(0, self.property['speedY'])
 
                     self.rect.top += vspeed
@@ -1220,10 +1240,10 @@ class Enemy(pygame.sprite.Sprite):
                                 self.rect.left = c.rect.right 
 
         else:
-            if self.cTimeDead >= self.timeDead:
+            if self.cTimedeadTime >= self.timedeadTime:
                 enemies.remove(self)
             else:
-                self.cTimeDead += 1
+                self.cTimedeadTime += 1
 
         self.hit = False
         if self.property['lives'] > 0:
@@ -1236,13 +1256,13 @@ class Enemy(pygame.sprite.Sprite):
             self.rect.height = 58
             self.frames.update({'idleframes': [0, 1]})
             self.frames.update({'hitframes': [2, 2]})
-            self.frames.update({'deadframes': [2, 2]})            
+            self.frames.update({'deadTimeframes': [2, 2]})            
         elif gp == 'enemy02':
             self.rect.width = 30
             self.rect.height = 67
             self.frames.update({'idleframes': [0, 1]})
             self.frames.update({'hitframes': [0, 1]})
-            self.frames.update({'deadframes': [0, 1]})
+            self.frames.update({'deadTimeframes': [0, 1]})
 
         self.frame = 'idleframes'
         self.cImage = self.frames[self.frame][0]
@@ -1265,9 +1285,9 @@ class Spike(pygame.sprite.Sprite):
 
     def getImage(self):
         if self.type == "<":
-            self.image = pygame.image.load("images/spikes/spikeL.png")
+            self.image = pygame.image.load("images/spikes/spiker.png")
         elif self.type == ">":
-            self.image = pygame.image.load("images/spikes/spikeR.png")
+            self.image = pygame.image.load("images/spikes/spikel.png")
         elif self.type == "^":
             self.image = pygame.image.load("images/spikes/spikeT.png")
         elif self.type == "v":
@@ -1407,8 +1427,8 @@ class Arrow(pygame.sprite.Sprite):
         self.id = id
         self.x = x
         self.y = y
-        self.width = 30
-        self.height = 30
+        self.width = 20
+        self.height = 20
         self.cImage = 0
         self.numImages = 3
         self.hit = False
@@ -1643,11 +1663,13 @@ class Marker(pygame.sprite.Sprite):
         self.type = type
 
     def update(self, player):
-        global total
-        rowMarker = math.fabs(round(self.rect.top/PLATFORM_SIZE))
-        #print rowMarker
-        if rowMarker == 0:
-            player.vel = self.property['speed']
+        if self.type == '@':
+            rowMarker = math.fabs(round(self.rect.top/PLATFORM_SIZE))
+            if rowMarker == 0:
+                player.vel = self.property['speed']
+        elif self.type == '*':
+            if self.rect.colliderect(player.rect):
+                player.vel = self.property['speed']
 
     def setProperty(self):
         pass
@@ -1731,7 +1753,7 @@ def setId(list):
     id = 1
        
     for p in reversed(list):
-        if p.type in ('P', 'Q', 'q', 'M', 'm', 'D', 'f', 'I', 'i'):
+        if p.type in ('P', 'Q', 'q', 'M', 'm', 'D', 'd', 'f', 'I', 'i'):
             continue
         p.id = id
         id += 1
@@ -1741,7 +1763,7 @@ def setProperty(list, settings):
         for y in list:
             if i['t'] == y.type:
                 setID = False
-                if y.type in ('-', '|'):
+                if y.type in ('-', '|', '*'):
                     for x in range(i['id'][0], i['id'][1]):
                         if x == y.id:
                             setID = True
@@ -1784,7 +1806,7 @@ def fillMap(prop, player, r, diff):
                 else:
                     player.orientation = 0
 
-            if col in ('P', 'D', 'Q', 'q', 'M', 'm', 'G'):
+            if col in ('P', 'D', 'd', 'Q', 'q', 'M', 'm', 'G'):
                 P = Platform(x, y, col)
                 platform.append(P)
             elif col in ('F', 'f', 'I', 'i', 'Y'):
@@ -1844,7 +1866,7 @@ def fillMap(prop, player, r, diff):
                 E = Enemy(x, y, col)               
                 enemies.append(E)
                 size = 20
-            elif col in ('*'):
+            elif col in ('@', '*'):
                 M = Marker(x, y, col)               
                 markers.append(M)
                 size = 20
