@@ -75,11 +75,15 @@ class Game():
         pass
 
     def loop(self, screen, player):
-        global portal, lvl
+        global portal, lvl, total
         # main loop variables
         clock = pygame.time.Clock()
-        ORIENTATION = 0
         stopCamera = False
+        ORIENTATION = -1
+        if player.type == 'K':
+            ORIENTATION = 0        
+        elif player.type == 'k':
+            ORIENTATION = 1
         # initialize font; must be called after 'pygame.init()' to avoid 'Font not Initialized' error
         clipMask(player)
         myfont = pygame.font.SysFont("monospace", 15)
@@ -632,6 +636,7 @@ class createPlayer(pygame.sprite.Sprite):
         self.rect.top = y
         self.rect.width = 52
         self.rect.height = 33
+        self.type = None
         self.screenAlpha = pygame.Surface((52,33))  # the size of your rect    
         self.alive = True
         self.invincible = False
@@ -1793,18 +1798,15 @@ def fillMap(prop, player, r, diff):
         for col in row:
             size = PLATFORM_SIZE
             if col in ('K', 'k'):
+                player.type = col
                 player.rect.left = x
-                player.rect.top = PLAYER_POSITION_Y
-                #player = createPlayer(1, 70, PLAYER_POSITION_Y)
-                if col == 'K':
+                player.rect.top = y
+                
+                if x < SCREEN_WIDTH/2:
                     player.dir = 0
-                elif col == 'k':
+                elif x > SCREEN_WIDTH/2:
                     player.dir = 1
                     player.image = pygame.image.load("images/player/playerRT.png")
-                if numRow <= 3:
-                    player.orientation = 1
-                else:
-                    player.orientation = 0
 
             if col in ('P', 'D', 'd', 'Q', 'q', 'M', 'm', 'G'):
                 P = Platform(x, y, col)
@@ -1896,13 +1898,19 @@ def fillMap(prop, player, r, diff):
                 e.rect.top += moveScreen
                 #e.y += moveScreen
         portal.rect.top += moveScreen
+        player.rect.top -= moveScreen 
     else:
-        moveScreen = math.fabs(SCREEN_HEIGHT + ((total - SCREEN_HEIGHT) - SCREEN_HEIGHT)) + (SCREEN_HEIGHT - PLAYER_POSITION_Y - PLATFORM_SIZE)
+        #moveScreen = math.fabs(SCREEN_HEIGHT + ((total - SCREEN_HEIGHT) - SCREEN_HEIGHT)) + (SCREEN_HEIGHT - PLAYER_POSITION_Y - PLATFORM_SIZE)
+        if player.rect.top < (total - SCREEN_HEIGHT):
+            moveScreen = (total - SCREEN_HEIGHT) - ((total - player.rect.top) - SCREEN_HEIGHT/2)
+        else:
+            moveScreen = (total - SCREEN_HEIGHT) 
         for i in elements:
             for e in i:
                 e.rect.top -= moveScreen
                 #e.y -= moveScreen
         portal.rect.top -= moveScreen
+        player.rect.top -= moveScreen 
 
 
 def reset(player):
