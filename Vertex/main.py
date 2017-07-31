@@ -27,6 +27,8 @@ PLAYER_INV_RIGHT_TOP = pygame.image.load("images/player1_r_inv.png")
 PLAYER_INV_RIGHT_BOT = pygame.image.load("images/player1B_r_inv.png")'''
 PLAYER_POSITION_Y = 500
 PLAYER_JUMP = 20
+DL = 0
+DR = 1
 
 PLATFORM_SIZE = 20
 TIME_FIRE_CANNON = 12
@@ -49,8 +51,7 @@ markers = []
 portal = None
 total = 0
 elements = [platform, ghPlatform, enemies, spikes, cannons, blackholes, coins, arrows, spheres, lasers, switches, markers]
-listUpdates = [platform, cannons, enemies, lasers, markers]
-
+listUpdates = [platform, cannons, enemies, spikes, lasers, markers]
 
 # keyboard
 # use the arrow keys by default
@@ -79,11 +80,8 @@ class Game():
         # main loop variables
         clock = pygame.time.Clock()
         stopCamera = False
-        ORIENTATION = -1
-        if player.type == 'K':
-            ORIENTATION = 0        
-        elif player.type == 'k':
-            ORIENTATION = 1
+        ORIENTATION = player.orientation
+        ORIENTATION = 0
         # initialize font; must be called after 'pygame.init()' to avoid 'Font not Initialized' error
         clipMask(player)
         myfont = pygame.font.SysFont("monospace", 15)
@@ -203,25 +201,23 @@ class Game():
             #
             #   U P D A T E
             # --------------------------------------------------------------
-            if player.idCannon == 0 and not player.cannon and not player.deadTime:
+            if player.idCannon == 0 and not player.cannon and player.alive:
                 if vertical_dir == VERTICAL_UP:
                     player.mov = True            
                     if player.rect.top > 0:
                         player.change_speed(0, -4)
-                    if player.orientation != 0:
-                        changeDimension(player, False, True, 0)
+                    changeDimension(player, False, True, 0)
                                 #changeDimension(player, False, True, 0)
                 elif vertical_dir == VERTICAL_DOWN:
                     player.mov = True
                     if player.rect.top + player.rect.height < SCREEN_HEIGHT:
                         player.change_speed(0, 4)
-                    if player.orientation != 1:
-                        changeDimension(player, False, True, 1)
+                    changeDimension(player, False, True, 1)
                             #changeDimension(player, False, True, 1)
 
-            # change if for elif for 4-coordinates only movement
-            if (not player.jump and not player.djump and player.floor and not player.deadTime) or player.idCannon != 0:                  
-                if horizontal_dir == HORIZONTAL_LEFT:              
+            # change if for elif for 4-coordinates only movement                           
+            if horizontal_dir == HORIZONTAL_LEFT:       
+                if (not player.jump and not player.djump and player.floor and not player.deadTime) or player.idCannon != 0: 
                     if player.idCannon != 0:
                         player.idCannon.change_speed(-10, 0)
                         #player.idCannon.rect.left -= 10
@@ -244,7 +240,13 @@ class Game():
                         elif player.dir == 1:                           
                             changeDimension(player, True, False)
                             changeDim = True
-                elif horizontal_dir == HORIZONTAL_RIGHT:                 
+
+                elif (player.jump or player.djump) and not player.floor and not player.deadTime:
+                    if player.dir == 0:
+                        player.ass = True
+
+            elif horizontal_dir == HORIZONTAL_RIGHT:   
+                if (not player.jump and not player.djump and player.floor and not player.deadTime) or player.idCannon != 0: 
                     if player.idCannon != 0:
                         #player.idCannon.rect.left += 10
                         player.idCannon.change_speed(10, 0)
@@ -267,6 +269,10 @@ class Game():
                         elif player.dir == 0: 
                             changeDimension(player, True, False)
                             changeDim = True
+
+                elif (player.jump or player.djump) and not player.floor and not player.deadTime:
+                    if player.dir == 1:
+                        player.ass = True
 
             self.animationSprite(player)
             
@@ -379,6 +385,7 @@ class Game():
                             block.hit = True                        
                         if not player.invincible:
                             player.deadTime = True
+                            player.alive = False
                             #player.hit = True
                             #player.lives -= 1
                         break
@@ -861,7 +868,7 @@ class createPlayer(pygame.sprite.Sprite):
                                 self.dimension = True
                                 break
                             elif co.type == 'd':
-                                if dif < dist-10:
+                                if dif < dist-7:
                                     stopCamera = True
                                     break
 
@@ -1481,8 +1488,8 @@ class Portal(pygame.sprite.Sprite):
         self.id = id
         self.x = x
         self.y = y
-        self.width = 80
-        self.height = 80
+        self.width = 60
+        self.height = 60
         self.image = ''
         self.cImage = 0
         self.numImages = 23
@@ -1758,7 +1765,7 @@ def setId(list):
     id = 1
        
     for p in reversed(list):
-        if p.type in ('P', 'Q', 'q', 'M', 'm', 'D', 'd', 'f', 'I', 'i'):
+        if p.type in ('P', 'Q', 'q', 'M', 'm', 'D', 'd', 'f', 'I', 'i', 'Y'):
             continue
         p.id = id
         id += 1
@@ -1768,7 +1775,7 @@ def setProperty(list, settings):
         for y in list:
             if i['t'] == y.type:
                 setID = False
-                if y.type in ('-', '|', '*'):
+                if y.type in ('-', '|', '*', 'F'):
                     for x in range(i['id'][0], i['id'][1]):
                         if x == y.id:
                             setID = True
@@ -1802,11 +1809,16 @@ def fillMap(prop, player, r, diff):
                 player.rect.left = x
                 player.rect.top = y
                 
-                if x < SCREEN_WIDTH/2:
+                if col == 'K':
                     player.dir = 0
-                elif x > SCREEN_WIDTH/2:
+                elif col == 'k':
                     player.dir = 1
                     player.image = pygame.image.load("images/player/playerRT.png")
+
+                if player.rect.top < SCREEN_HEIGHT:
+                    player.orientation = 1
+                else:
+                    player.orientation = 0
 
             if col in ('P', 'D', 'd', 'Q', 'q', 'M', 'm', 'G'):
                 P = Platform(x, y, col)
@@ -1904,7 +1916,7 @@ def fillMap(prop, player, r, diff):
         if player.rect.top < (total - SCREEN_HEIGHT):
             moveScreen = (total - SCREEN_HEIGHT) - ((total - player.rect.top) - SCREEN_HEIGHT/2)
         else:
-            moveScreen = (total - SCREEN_HEIGHT) 
+            moveScreen = (total - SCREEN_HEIGHT)
         for i in elements:
             for e in i:
                 e.rect.top -= moveScreen
