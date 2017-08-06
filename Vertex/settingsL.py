@@ -21,6 +21,7 @@ def loadLevel(lvl):
     # (^, <, >, v) = Spikes
     # (A, a) = Arrow (Change ORIENTATION)
     # (@, *) = Marks (@ -> Camera / * -> Player)
+    # X = CheckPoint
 
     if lvl == 1:
         level =['                                       ',
@@ -343,8 +344,8 @@ def loadLevel(lvl):
                 '                   <P>           I     ',
                 '                   <P>                 ',
                 '                              PPPPPPPPP',
-                '                              P     a P',
                 '                              P       P',
+                '                              P     a P',
                 '                    PPPPPPPPPPP        ',
                 '                    P        |D        ',
                 '                    P        |D        ',
@@ -355,13 +356,13 @@ def loadLevel(lvl):
                 '             P******P|        P       F',
                 'P            P      P|        PPPPPPPPP',
                 'P            P------P          P       ',
-                '             P------P                 Q',
+                '             P------P  @              Q',
                 '           O P      P                 Q',
                 '             P    A P          P      Q',
                 '      PPPPPPPP      |          P       ',
                 '      PS     P      |          P       ',
                 '      P      P      |          P       ',
-                '      P      P a    P   @      P      Q',
+                '      P      P a    P          P      Q',
                 '      P      P------P          P      Q',
                 '      P      P      P-----     P       ',
                 '      P             P          P       ',
@@ -479,7 +480,7 @@ def loadLevel(lvl):
                 'Pvv                                    ',
                 'P                                      ',
                 'P                                      ',
-                'P                                       ',
+                'Px                                     ',
                 'P                                      ',
                 'P                                      ',
                 'P          B  C       P                ',
@@ -489,16 +490,16 @@ def loadLevel(lvl):
                 'I     P                            P0 I',
                 'II                                 P  I',
                 'P                                   PPP',
-                'P                                      ',
+                'P            I                         ',
                 'P           P                       B  ',
                 'P           P                          ',
-                'P           P          P            B  ',
+                'P           P E        P            B  ',
                 'P           P          P               ',
                 'P           P          P            B  ',
                 'P           P          P               ',
-                'P  E        P                       B  ',
+                'P E         P                       B  ',
                 'P           P                          ',
-                'P        B  F                       B  ',
+                'P        B  FI                      B  ',
                 'P           F                          ',
                 'P E      B  F                       B  ',
                 'P           F                          ',
@@ -514,8 +515,8 @@ def loadLevel(lvl):
                 'P                                      ',
                 'P                                      ',
                 'P                                      ',
-                'P                                      ',
                 'P K                                    ',
+                'P                                      ',
                 'P                                      ',
                 'P                                      ',
                 'P                                      ',
@@ -527,14 +528,15 @@ def loadLevel(lvl):
                      {'class': 'Canon','id': [3, 4], 't': 'C', 'property': {'dir': 'top', 'color': 'blue', 'power': 12, 'disable': True}},
                      {'class': 'Canon','id': [5], 't': 'C', 'property': {'dir': 'top', 'color': 'red', 'power': 12, 'disable': True}},
                      {'class': 'GhostPlatform','id': [1, 7], 't': 'F', 'property': {'alpha': 0, 'velAlpha': 26}},
-                     {'class': 'GhostPlatform','id': [7, 10], 't': 'F', 'property': {'alpha': 0, 'velAlpha': 26}},
+                     {'class': 'GhostPlatform','id': [7, 10], 't': 'F', 'property': {'alpha': 0, 'velAlpha': 10}},
                      {'class': 'Marker','id': [1], 't': '@', 'property': {'speed': 1}},
                      {'class': 'Marker','id': [2, 8], 't': '*', 'property': {'speed': 2}},
-                     {'class': 'Enemy','id': [4], 't': 'E', 'property': {'collision': False, 'dir': 'right', 'orientation': 'up', 'group': 'enemy02', 'speedY': 2, 'speedX': 4, 'canDie': False, 'damage': False, 'lives': 1, 'stopped': True, 'hasItem': None}},
+                     {'class': 'Enemy','id': [3], 't': 'E', 'property': {'collision': True, 'dir': 'left', 'orientation': 'down', 'group': 'enemy03', 'speedY': 1, 'speedX': 7, 'canDie': True, 'damage': True, 'lives': 1, 'stopped': False, 'hasItem': None}},
                      {'class': 'Enemy','id': [1], 't': 'E', 'property': {'collision': True, 'dir': 'left', 'orientation': 'down', 'group': 'enemy01', 'speedY': 2, 'speedX': 5, 'canDie': True, 'damage': True, 'lives': 1, 'stopped': False, 'hasItem': 'O'}},
                      {'class': 'Enemy','id': [2], 't': 'E', 'property': {'collision': True, 'dir': 'left', 'orientation': 'down', 'group': 'enemy01', 'speedY': 2, 'speedX': 5, 'canDie': True, 'damage': True, 'lives': 1, 'stopped': False, 'hasItem': None}},
-                     {'class': 'Enemy','id': [3], 't': 'E', 'property': {'collision': True, 'dir': 'right', 'orientation': 'down', 'group': 'enemy01', 'speedY': 2, 'speedX': 5, 'canDie': True, 'damage': True, 'lives': 1, 'stopped': False, 'hasItem': None}},
-                     {'class': 'Enemy','id': [5], 't': 'E', 'property': {'collision': True, 'dir': 'right', 'orientation': 'up', 'group': 'enemy01', 'speedY': 2, 'speedX': 5, 'canDie': True, 'damage': True, 'lives': 1, 'stopped': False, 'hasItem': None}},
+                     {'class': 'Enemy','id': [4], 't': 'E', 'property': {'collision': True, 'dir': 'right', 'orientation': 'down', 'group': 'enemy01', 'speedY': 2, 'speedX': 5, 'canDie': True, 'damage': True, 'lives': 1, 'stopped': False, 'hasItem': None}},
+                     {'class': 'Enemy','id': [5], 't': 'E', 'property': {'collision': False, 'dir': 'right', 'orientation': 'up', 'group': 'enemy02', 'speedY': 2, 'speedX': 4, 'canDie': False, 'damage': False, 'lives': 1, 'stopped': True, 'hasItem': None}},
+                     {'class': 'Enemy','id': [6], 't': 'E', 'property': {'collision': True, 'dir': 'right', 'orientation': 'up', 'group': 'enemy01', 'speedY': 2, 'speedX': 5, 'canDie': True, 'damage': True, 'lives': 1, 'stopped': False, 'hasItem': None}},
                      {'class': 'Laser', 'id': [1, 6], 't': '-', 'property': {'color': 'yellow', 'coord': [120, 120], 'dir': 'up', 'speedUp': 2, 'speedDown': 2, 'random': False, 'timeDelay': 0}},
                      {'class': 'Laser', 'id': [6, 12], 't': '-', 'property': {'color': 'yellow', 'coord': [120, 120], 'speedUp': 3, 'speedDown': 3, 'random': False, 'timeDelay': 20}},
                      {'class': 'Laser', 'id': [12, 17], 't': '-', 'property': {'color': 'yellow', 'coord': [120, 120], 'speedUp': -2, 'speedDown': -2, 'random': False, 'timeDelay': 0}},             
@@ -547,8 +549,6 @@ def loadLevel(lvl):
                      {'class': 'Switch', 'id': [1], 'idLaser': [26, 32], 't': 'S', 'property': {'dir': 'right', 'color': 'red'}},
                      {'class': 'Switch', 'id': [2], 'idLaser': [23, 26], 't': 'S', 'property': {'dir': 'left', 'color': 'blue'}},
                      {'class': 'Switch', 'id': [3], 'idLaser': [32, 38], 't': 'S', 'property': {'dir': 'right', 'color': 'green'}},
-                     {'class': 'Platform','id': [1, 2], 't': 'G', 'property': {'coord': [0, 320, 0, 320], 't1': 'D', 't2': 'G', 'speedX': -2, 'speedY': 0, 'glued': True}}
-
-                   ]
+                     {'class': 'Platform','id': [1, 2], 't': 'G', 'property': {'coord': [0, 320, 0, 320], 't1': 'D', 't2': 'G', 'speedX': -2, 'speedY': 0, 'glued': True}}                   ]
 
     return level, settings
