@@ -15,7 +15,7 @@ SCREEN_HEIGHT = 900
 FRAME_RATE = 30
 # soy dos gilipollas
 
-WALL_COLOR = {'P':(255, 255, 255), 'Q': (0, 200, 93), 'q': (179, 255, 215), 'D': (200, 0, 200), 'd': (238,206,0), 'G': (255, 255, 255), 'F': (255, 255, 255), 'f': (255, 255, 255), 'Y': (199, 248, 255), 'M': (238, 56, 24), 'm': (20, 20, 228), 'I': (255,255,255), 'i': (255,255,255), '*': (255,255,255)}
+WALL_COLOR = {'P':(255, 255, 255), 'p': (90, 221, 228),'Q': (0, 200, 93), 'q': (179, 255, 215), 'D': (200, 0, 200), 'd': (238,206,0), 'G': (255, 255, 255), 'F': (255, 255, 255), 'f': (255, 255, 255), 'Y': (199, 248, 255), 'M': (238, 56, 24), 'm': (20, 20, 228), 'I': (255,255,255), 'i': (255,255,255), '*': (255,255,255)}
 
 PLAYER_LEFT_TOP = pygame.image.load("images/player/playerLT.png")
 PLAYER_LEFT_BOT = pygame.image.load("images/player/playerLB.png")
@@ -48,10 +48,11 @@ spheres = []
 lasers = []
 switches = []
 markers = []
+trampolines = []
 portal = None
 checkpoint = None
 total = 0
-elements = [platform, ghPlatform, enemies, spikes, cannons, blackholes, coins, arrows, spheres, lasers, switches, markers]
+elements = [platform, ghPlatform, enemies, spikes, cannons, blackholes, coins, arrows, spheres, lasers, switches, markers, trampolines]
 listUpdates = [platform, cannons, enemies, spikes, lasers, markers]
 
 # keyboard
@@ -286,7 +287,7 @@ class Game():
                         player.jump = False
                         player.djump = False
 
-            self.animationSprite(player)
+            self.animationSprite(player, space_key_pressed)
             
             if player.alive:              
 
@@ -316,12 +317,11 @@ class Game():
                     else:
                         if not player.cannon and not player.ass:          
                         # Gravity
-                            if player.dir == DL:
-                                player.change_speed(-player.velGravity, 0)
-                                #player.rect.left -= player.velGravity                        
-                            elif player.dir == DR:
-                                player.change_speed(player.velGravity, 0)
-                                #player.rect.left += player.velGravity       
+                            if not player.trampolin:
+                                if player.dir == DL:
+                                    player.change_speed(-player.velGravity, 0)
+                                elif player.dir == DR:
+                                    player.change_speed(player.velGravity, 0)
                             
                  # Check eje X of the Player for change side
                 if player.canSide:
@@ -350,7 +350,7 @@ class Game():
                 stopCamera = False
 
                 # Check collision between Player and another element (platform, enemies, etc)
-                stopCamera = player.update([platform, ghPlatform, enemies, lasers], space_key_pressed, stopCamera)
+                stopCamera = player.update([platform, ghPlatform, enemies, lasers, trampolines], space_key_pressed, stopCamera)
 
                 # Player - Make the movement and check the collision with the group passed by parameter
                 for i in listUpdates:
@@ -541,7 +541,7 @@ class Game():
                         checkpoint = None
                     portal.hit = False
                     checkpoint.hit = False
-                    #labelCoin = myfont.render("Coins: 0", 1, (255,255,0))
+                    labelCoin = myfont.render("Blue: 0/3 - Red: 0/3 - Gold: 0/3", 1, (255,255,0))
                     #newGame(player, lvl)
                     player = reset(player)
                     clipMask(player)
@@ -570,7 +570,7 @@ class Game():
                 '''for i in range(player.lives):
                     screen.blit(heart, ((i+1)*33, 20))'''
                
-                screen.blit(labelCoin, (100, 100))
+                screen.blit(labelCoin, (SCREEN_WIDTH/2+100, 10))
             
             click1, click2, click3 = pygame.mouse.get_pressed()      
         
@@ -591,7 +591,7 @@ class Game():
             # update display
             pygame.display.update()
 
-    def animationSprite(self, player):
+    def animationSprite(self, player, space_key):
          # SpriteSheet Animation Player
         if (player.cImage >= player.listSP[player.spriteSheet]-1):
             player.cImage = 0
@@ -640,6 +640,26 @@ class Game():
                 e.cImage = e.frames[e.frame][0]
             else:
                 e.cImage += 0.25
+      
+        for t in trampolines:
+            if t.active:
+                if (t.cImage >= t.numImages-1):
+                    t.cImage = 0
+                    t.active = False
+                    player.aniJump = True
+                    if space_key:
+                        player.distJump = 24.0
+                    else:
+                        player.distJump = 16.0
+                    player.cJump = player.distJump
+                    player.maxJ = False
+                    player.trampolin = False
+                else:
+                    t.cImage += 1       
+                    if t.type == 'T':
+                        player.rect.left -= 1
+                    elif t.type == 't':
+                        player.rect.left += 1
 
         if checkpoint.hit:
             if (checkpoint.cImage >= checkpoint.numImages-1):
@@ -702,6 +722,7 @@ class createPlayer(pygame.sprite.Sprite):
         self.canSide = False
         self.glued = False
         self.enemy = None
+        self.trampolin = False
         #self.color = (255, 255, 255)
 
         self.hspeed = 0
@@ -769,7 +790,7 @@ class createPlayer(pygame.sprite.Sprite):
 
         for c in collidable:
 
-            if c == enemies:          
+            if c in (enemies):          
                 collision_list = pygame.sprite.spritecollide( self, c, False, pygame.sprite.collide_mask )
             else:
                 collision_list = pygame.sprite.spritecollide( self, c, False )
@@ -848,7 +869,6 @@ class createPlayer(pygame.sprite.Sprite):
 
                     else:
                         if not self.invincible and not self.hit and co.property['damage'] and not co.hit:
-                            print 'ENTRA 1'
                             self.alive = False
                             self.deadTime = True 
                             self.spriteSheet = 'dead'
@@ -864,12 +884,26 @@ class createPlayer(pygame.sprite.Sprite):
                             self.spriteSheet = 'dead'
                             self.cImage = 0
 
+                elif co.type in ('T', 't'):
+                    co.hit = True
+                    if self.hspeed > 0:     
+                        if co.type == 'T' :
+                            co.active = True
+                            self.trampolin = True
+                            #self.rect.right = co.rect.left
+
+                    elif self.hspeed < 0:                   
+                        if co.type == 't' :                              
+                            co.active = True
+                            self.trampolin = True
+                            #self.rect.left = co.rect.right
+
                 # CHECK COLLISION PLATFORMS
                 else:
                     if co.type in ('D', 'd', 'M', 'm'):
                         self.platform = co
-                    if co.type in ('P', 'Q', 'q', 'D', 'F', 'i', 'd'):
-                        if co.alpha > 70:
+                    if co.type in ('P', 'p', 'Q', 'q', 'D', 'F', 'i', 'd'):
+                        if co.alpha > 70 or (co.type == 'F' and co.alpha < 200):
                             roof = False            
                             dif = math.fabs(co.rect.centery - self.rect.centery)
                             dist = (co.rect.height+self.rect.height)/2
@@ -893,6 +927,13 @@ class createPlayer(pygame.sprite.Sprite):
                             if hasattr(co, 'glued'):
                                 if co.glued:
                                     self.glued = True
+
+                            if co.type == 'p':
+                                if self.ass:
+                                    id = co.property['id']
+                                    for i in platform:
+                                        if i.type == 'p' and i.property['id'] == id:
+                                            i.beat = self.dir
                         
                             if not roof:                           
                                 self.floor = True    
@@ -926,6 +967,9 @@ class createPlayer(pygame.sprite.Sprite):
 
                     if co.type == 'I':
                         self.canSide = True
+
+                    
+
 
         if self.cannon:
             if self.orientation == 0:
@@ -976,13 +1020,20 @@ class createPlayer(pygame.sprite.Sprite):
                             self.spriteSheet = 'dead'
                             self.cImage = 0
 
+                elif co.type in ('T', 't') and not self.trampolin:
+                    if self.vspeed > 0:
+                        self.rect.bottom = co.rect.top
+
+                    elif self.vspeed < 0:
+                        self.rect.top = co.rect.bottom
+
                 # CHECK COLLISION PLATFORMS
                 else:
                     self.wall = True
                     if co.type in ('D', 'M', 'm'):
                         self.platform = co
                     if co.type in ('P', 'i') or (co.type == 'M' and self.dir == 0) or (co.type == 'm' and self.dir == 1):
-                        if co.alpha > 70:
+                        if co.alpha > 70 or (co.type == 'F' and co.alpha < 200):
                             if self.cannon:
                                 if self.orientation == 0:
                                     self.rect.top = co.rect.bottom
@@ -1058,7 +1109,10 @@ class createPlayer(pygame.sprite.Sprite):
             self.hit = False
             self.timeAlpha = 5
             
-        self.screenAlpha.set_alpha(self.alpha)    
+        self.setAlpha()
+        
+    def setAlpha(self):
+        self.screenAlpha.set_alpha(self.alpha)
 
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x, y, type):
@@ -1066,7 +1120,7 @@ class Platform(pygame.sprite.Sprite):
         self.id = id
         self.x = x
         self.y = y
-        self.image = pygame.Surface( (PLATFORM_SIZE, PLATFORM_SIZE) )      
+        self.image = pygame.Surface( (PLATFORM_SIZE, PLATFORM_SIZE) )             
         self.image.fill (WALL_COLOR[type])       
         self.rect = self.image.get_rect()
         self.rect.left = x
@@ -1077,10 +1131,18 @@ class Platform(pygame.sprite.Sprite):
         self.indexCoord = 0
         self.alpha = 255
         self.property = None
+        self.beat = -1
+        self.cBeat = 0
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
         #surface.blit(self.screenAlpha, self.rect)
+
+    def getImage(self):
+        if self.type in ('P', 'D', 'Q') or self.type2 in ('P', 'D', 'Q'):
+            self.image = pygame.image.load("images/platform_"+self.type+".png")
+        elif self.type in ('d', 'q', 'p') or self.type2 in ('d', 'q', 'p'):
+            self.image = pygame.image.load("images/platform_"+self.type+self.type+".png")
 
     def update(self, player):          
         if self.type2 == 'G':
@@ -1117,14 +1179,28 @@ class Platform(pygame.sprite.Sprite):
                 if player.glued:
                     player.rect.left -= self.property['speedX']/2
 
-                
+        if self.beat != -1:
+            if self.cBeat >= 150:
+                self.beat = -1
+                self.cBeat = 0
+            else:
+                self.cBeat += 10
 
-    def setProperty(self):
-        self.type = self.property['t1']
-        self.type2 = self.property['t2']
-        self.image.fill (WALL_COLOR[self.type])
-        self.coord = self.property['coord'][0]
-        self.glued = self.property['glued']
+                if self.beat == 0:
+                    self.rect.left -= 10
+                    player.rect.left = self.rect.right
+                elif self.beat == 1:
+                    self.rect.left += 10
+                    player.rect.right = self.rect.left
+
+    def setProperty(self):     
+        if self.type == 'G':
+            self.type = self.property['t1']
+            self.type2 = self.property['t2']
+            self.image.fill (WALL_COLOR[self.type])
+            self.coord = self.property['coord'][0]
+            self.glued = self.property['glued']
+        self.getImage()
 
 class GhostPlatform(pygame.sprite.Sprite):
     def __init__(self, x, y, type, alpha):
@@ -1132,9 +1208,11 @@ class GhostPlatform(pygame.sprite.Sprite):
         self.id = id
         self.x = x
         self.y = y
-        self.image = pygame.Surface( (PLATFORM_SIZE, PLATFORM_SIZE) )
+        #self.image = pygame.Surface( (PLATFORM_SIZE, PLATFORM_SIZE) )
+        self.image = pygame.image.load("images/platform_P.png")
         self.mask = pygame.mask.from_surface(self.image)
-        self.image.fill (WALL_COLOR[type])
+        #self.image.fill (WALL_COLOR[type])
+        self.screenAlpha = pygame.Surface((20,20))
         self.rect = self.image.get_rect()
         self.rect.left = x
         self.rect.top = y
@@ -1149,6 +1227,13 @@ class GhostPlatform(pygame.sprite.Sprite):
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
+        surface.blit(self.screenAlpha, self.rect)
+
+    def getImage(self):
+        if self.type in ('F'):
+            self.image = pygame.image.load("images/platform_"+self.type+".png")
+        elif self.type in ('f'):
+            self.image = pygame.image.load("images/platform_"+self.type+self.type+".png")
 
     def updateAlpha(self):
         if self.delayAlpha:
@@ -1171,14 +1256,14 @@ class GhostPlatform(pygame.sprite.Sprite):
                 self.alpha = 0
                 self.changeAlpha = False
                 self.delayAlpha = True
-
+        
         self.setAlpha()
 
     def setAlpha(self):
-        self.image.set_alpha(self.alpha) # alpha level
+        self.screenAlpha.set_alpha(self.alpha) # alpha level
 
     def setProperty(self):
-
+        #self.getImage()
         self.alpha = self.property['alpha']
         if self.alpha == 255:
             changeAlpha  = True
@@ -1774,6 +1859,34 @@ class Checkpoint(pygame.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect, (0, math.floor(self.cImage)*self.height, self.width, self.height))
 
+class Trampoline(pygame.sprite.Sprite):
+    def __init__(self, x, y, type):
+        pygame.sprite.Sprite.__init__(self)
+        self.id = id
+        self.x = x
+        self.y = y
+        self.width = 30
+        self.height = 30
+        self.cImage = 0
+        self.numImages = 6
+        self.type = type
+        self.hit = False
+        self.active = False
+
+    def getImage(self):
+        if self.type == "T":
+            self.image = pygame.image.load("images/trampolineR.png")
+        elif self.type == "t":
+            self.image = pygame.image.load("images/trampolineL.png")
+        self.rect = self.image.get_rect()
+        self.rect.top = self.y
+        self.rect.left = self.x
+        self.rect.width = self.width
+        self.rect.height = self.height
+                
+    def draw(self, surface):
+        surface.blit(self.image, self.rect, (0, math.floor(self.cImage)*self.height, self.width, self.height))
+
 def clipMask(obj):
     sheet = obj.image #Load the sheet
     sheet.set_clip(pygame.Rect(0, 0, obj.rect.width, obj.rect.height)) #Locate the sprite you want
@@ -1906,17 +2019,18 @@ def fillMap(prop, player, r, diff):
                 else:
                     player.orientation = 0
 
-            if col in ('P', 'D', 'd', 'Q', 'q', 'M', 'm', 'G'):
+            if col in ('P', 'p', 'D', 'd', 'Q', 'q', 'M', 'm', 'G'):
                 P = Platform(x, y, col)
+                P.getImage()
                 platform.append(P)
             elif col in ('F', 'f', 'I', 'i', 'Y'):
                 changeAlp = True
-                alpha = 255
+                alpha = 0
                 if col in ('I', 'i', '*'):
-                    alpha = 0
+                    alpha = 255
                     changeAlp = False
                 if col in ('Y'):
-                    alpha = 40
+                    alpha = 230
                     changeAlp = False
                 P = GhostPlatform(x, y, col, alpha)
                 P.setAlpha()
@@ -1964,7 +2078,12 @@ def fillMap(prop, player, r, diff):
             elif col in ('X', 'x'):
                 checkpoint = Checkpoint(x, y, col)
                 checkpoint.getImage()
-                clipMask(checkpoint)               
+                clipMask(checkpoint)
+            elif col in ('T', 't'):
+                T = Trampoline(x, y, col)
+                T.getImage()
+                clipMask(T)
+                trampolines.append(T)
             x += 20
             numColumn += 1
         y += 20
