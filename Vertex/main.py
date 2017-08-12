@@ -49,11 +49,12 @@ lasers = []
 switches = []
 markers = []
 trampolines = []
+trapSpike = []
 portal = None
 checkpoint = None
 total = 0
-elements = [platform, ghPlatform, enemies, spikes, cannons, blackholes, coins, arrows, spheres, lasers, switches, markers, trampolines]
-listUpdates = [platform, cannons, enemies, spikes, lasers, markers]
+elements = [platform, ghPlatform, enemies, spikes, cannons, blackholes, coins, arrows, spheres, lasers, switches, markers, trampolines, trapSpike]
+listUpdates = [platform, cannons, enemies, spikes, lasers, markers, trapSpike]
 
 # keyboard
 # use the arrow keys by default
@@ -350,7 +351,7 @@ class Game():
                 stopCamera = False
 
                 # Check collision between Player and another element (platform, enemies, etc)
-                stopCamera = player.update([platform, ghPlatform, enemies, lasers, trampolines], space_key_pressed, stopCamera)
+                stopCamera = player.update([platform, ghPlatform, enemies, lasers, trampolines, trapSpike], space_key_pressed, stopCamera)
 
                 # Player - Make the movement and check the collision with the group passed by parameter
                 for i in listUpdates:
@@ -552,8 +553,7 @@ class Game():
                     timeGameOver -= 1
 
             # blit the graphic elements to the screen surface
-            if player.alive or player.blackhole or player.deadTime:
-                player.draw(screen)
+            if player.alive or player.blackhole or player.deadTime: 
                 portal.draw(screen)
                 checkpoint.draw(screen)
 
@@ -564,6 +564,8 @@ class Game():
                 for i in elements:
                     for e in i:
                         e.draw(screen)
+
+                player.draw(screen)
                 
                 #screen.blit(fog, (0, 0))
 
@@ -874,6 +876,13 @@ class createPlayer(pygame.sprite.Sprite):
                             self.spriteSheet = 'dead'
                             self.cImage = 0
 
+                elif co.type == '#':
+                    if co.cImage >= 1:
+                        self.alive = False
+                        self.deadTime = True 
+                        self.spriteSheet = 'dead'
+                        self.cImage = 0
+
                 elif co.type == '|':
                     if not self.invincible and co.active:
                         #player.alive = False 
@@ -968,9 +977,6 @@ class createPlayer(pygame.sprite.Sprite):
                     if co.type == 'I':
                         self.canSide = True
 
-                    
-
-
         if self.cannon:
             if self.orientation == 0:
                 self.change_speed(0, -12)
@@ -1009,6 +1015,13 @@ class createPlayer(pygame.sprite.Sprite):
                         elif ( self.vspeed < 0 ):
                             # UP DIRECTION
                             self.rect.top = co.rect.bottom
+
+                elif co.type == '#':
+                    if co.cImage >= 1:
+                        self.alive = False
+                        self.deadTime = True 
+                        self.spriteSheet = 'dead'
+                        self.cImage = 0
 
                 elif co.type == '-':
                     if not self.invincible and co.active:
@@ -1443,9 +1456,9 @@ class Spike(pygame.sprite.Sprite):
 
     def getImage(self):
         if self.type == "<":
-            self.image = pygame.image.load("images/spikes/spiker.png")
+            self.image = pygame.image.load("images/spikes/spikeR.png")
         elif self.type == ">":
-            self.image = pygame.image.load("images/spikes/spikel.png")
+            self.image = pygame.image.load("images/spikes/spikeL.png")
         elif self.type == "^":
             self.image = pygame.image.load("images/spikes/spikeT.png")
         elif self.type == "v":
@@ -1887,6 +1900,64 @@ class Trampoline(pygame.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect, (0, math.floor(self.cImage)*self.height, self.width, self.height))
 
+class Trap(pygame.sprite.Sprite):
+    def __init__(self, x, y, type):
+        pygame.sprite.Sprite.__init__(self)
+        self.id = id
+        self.x = x
+        self.y = y
+        self.width = 20
+        self.height = 20
+        self.cImage = 0
+        self.numImages = 5
+        self.count = 0
+        self.property = None
+        self.out = False
+        self.stop = False
+        self.type = type
+        self.hit = False
+
+    def getImage(self):     
+        if self.property['dir'] == "top":
+            self.image = pygame.image.load("images/spikes/spikeTA.png")
+        elif self.property['dir'] == "bot":
+            self.image = pygame.image.load("images/spikes/spikeBA.png")
+        elif self.property['dir'] == "left":
+            self.image = pygame.image.load("images/spikes/spikeLA.png")
+        elif self.property['dir'] == "right":
+            self.image = pygame.image.load("images/spikes/spikeRA.png")
+        self.rect = self.image.get_rect()
+        self.rect.top = self.y
+        self.rect.left = self.x
+        self.rect.width = self.width
+        self.rect.height = self.height
+
+        clipMask(self)
+
+    def setProperty(self):
+        self.getImage()   
+        
+    def update(self, player):
+        if self.stop:
+            if self.count >= self.property['time']:
+                self.count = 0
+                self.stop = False
+                self.out = not self.out
+            else:
+                self.count += 1
+        else:
+            if self.out:
+                self.cImage -= 1
+            else:
+               self.cImage += 1
+
+            if self.cImage >= self.numImages-1 or self.cImage <= 0:
+                self.stop = True
+
+    def draw(self, surface):
+        print self.cImage
+        surface.blit(self.image, self.rect, (math.floor(self.cImage)*self.width, 0, self.width, self.height))
+
 def clipMask(obj):
     sheet = obj.image #Load the sheet
     sheet.set_clip(pygame.Rect(0, 0, obj.rect.width, obj.rect.height)) #Locate the sprite you want
@@ -1970,7 +2041,7 @@ def setProperty(list, settings):
         for y in list:
             if i['t'] == y.type:
                 setID = False
-                if y.type in ('-', '|', '*', 'F'):
+                if y.type in ('-', '|', '*', 'F', '#'):
                     for x in range(i['id'][0], i['id'][1]):
                         if x == y.id:
                             setID = True
@@ -2040,6 +2111,9 @@ def fillMap(prop, player, r, diff):
                 S = Spike(x, y, col)
                 S.getImage()
                 spikes.append(S)
+            elif col in ('#'):
+                T = Trap(x, y, col)
+                trapSpike.append(T)
             elif col in ('C'):
                 C = Cannon(x, y, col)
                 cannons.append(C)

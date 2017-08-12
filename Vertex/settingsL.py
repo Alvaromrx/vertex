@@ -472,8 +472,8 @@ def loadLevel(lvl):
                 '       <P                              ',
                 '                                       ',
                 '                                       ',
-                '             <P                        ',
-                '             <P                        ',
+                '             <P#                       ',
+                '             <P#                       ',
                 '                                       ',
                 'PPPt                                   ',
                 'PPP                                    ',
@@ -551,6 +551,7 @@ def loadLevel(lvl):
                      {'class': 'Switch', 'id': [2], 'idLaser': [23, 26], 't': 'S', 'property': {'dir': 'left', 'color': 'blue'}},
                      {'class': 'Switch', 'id': [3], 'idLaser': [32, 38], 't': 'S', 'property': {'dir': 'right', 'color': 'green'}},
                      {'class': 'Platform','id': [1, 2, 3], 't': 'p', 'property': {'id': 1}}, 
-                     {'class': 'Platform','id': [4, 5], 't': 'G', 'property': {'coord': [0, 320, 0, 320], 't1': 'D', 't2': 'G', 'speedX': -2, 'speedY': 0, 'glued': True}}                   ]
+                     {'class': 'Platform','id': [4, 5], 't': 'G', 'property': {'coord': [0, 320, 0, 320], 't1': 'D', 't2': 'G', 'speedX': -2, 'speedY': 0, 'glued': True}},
+                     {'class': 'Trap','id': [1, 3], 't': '#', 'property': {'dir': 'left', 'time': 50}}]
 
     return level, settings
